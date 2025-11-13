@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hỗ Trợ Xử Án RCPD</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .crime-item.selected .crime-count-input {
+            background: white;
+            color: #333;
+            border-color: #dc2626;
+        }
+        .wanted-crime-item.selected .wanted-crime-count-input {
+            background: white;
+            color: #333;
+            border-color: #dc2626;
+        }
+        .bail-crime-item.selected .bail-crime-count-input {
+            background: white;
+            color: #333;
+            border-color: #dc2626;
+        }
+        body {
+            background-image: url('anhnen.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: -1;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+        }
+        .tab-button.active {
+            transform: scale(1.05);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        #loading-screen::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('anhnenne.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 1;
+            z-index: -1;
+        }
+        .police-emblem {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            opacity: 0.15;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            border: 8px solid rgba(255, 215, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.5);
+            text-align: center;
+            animation: pulse 3s ease-in-out infinite;
+        }
+        .police-emblem::before {
+            content: "POLICE DEPARTMENT";
+            position: absolute;
+            top: 80px;
+            font-size: 18px;
+            letter-spacing: 3px;
+        }
+        .police-emblem::after {
+            content: "Rlife City Police Department";
+            position: absolute;
+            bottom: 80px;
+            font-size: 14px;
+            letter-spacing: 2px;
+        }
+        .login-container {
+            position: relative;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            min-width: 400px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        .officer-profile {
+            width: auto;
+            height: auto;
+            max-width: 220px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            overflow: visible;
+            position: relative;
+            z-index: 10000;
+        }
+        .officer-profile img {
+            width: auto;
+            height: auto;
+            max-width: 220px;
+            max-height: 220px;
+            object-fit: contain;
+            display: block;
+            position: relative;
+            z-index: 10001;
+            border-radius: 20px;
+        }
+        .officer-name {
+            text-align: center;
+            color: #1e3a8a;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+        .password-input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .password-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 20px;
+            letter-spacing: 10px;
+            text-align: center;
+            background: white;
+            color: #1e3a8a;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            cursor: default;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .password-input:focus {
+            outline: none;
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+        }
+        @keyframes typing {
+            0% { 
+                width: 0;
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            100% { 
+                width: 100%;
+                opacity: 1;
+            }
+        }
+        .password-typing {
+            display: inline-block;
+            animation: typing 2.5s steps(12, end) forwards;
+            overflow: hidden;
+            white-space: nowrap;
+            width: 0;
+        }
+        .submit-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(30, 58, 138, 0.3);
+        }
+        .submit-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(30, 58, 138, 0.4);
+        }
+        .submit-btn:active {
+            transform: scale(0.95);
+        }
+        #main-content {
+            opacity: 0;
+            transition: opacity 0.5s ease-in;
+        }
+        #main-content.loaded {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-2">
+    <!-- Loading Screen -->
+    <div id="loading-screen">
+        <div class="police-emblem"></div>
+        <div class="login-container">
+            <div class="officer-profile">
+                <img src="anhdaidien.png" alt="Officer">
+                </div>
+            <div class="officer-name">Đang kiểm tra thông tin</div>
+            <div class="password-input-container">
+                <div class="password-input">
+                    <span class="password-typing" id="passwordDots">************</span>
+                </div>
+                <button class="submit-btn" onclick="handleLogin()">→</button>
+            </div>
+                </div>
+                </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+    <div class="max-w-[98%] mx-auto">
+        <!-- Navigation Bar -->
+        <div class="mb-3 bg-gradient-to-r from-gray-800 to-gray-900 rounded-lg shadow-lg overflow-hidden">
+            <div class="flex items-center justify-center divide-x divide-white/30">
+                <button onclick="switchSection('home')" id="nav-home" class="nav-item flex-1 px-6 py-3 text-white font-semibold bg-white/20 hover:bg-white/10 transition-all">
+                    Trang Chủ
+                </button>
+                <button onclick="switchSection('trial')" id="nav-trial" class="nav-item flex-1 px-6 py-3 text-white font-semibold hover:bg-white/10 transition-all">
+                    Hỗ Trợ Xử Án
+                </button>
+                <button onclick="switchSection('wanted')" id="nav-wanted" class="nav-item flex-1 px-6 py-3 text-white font-semibold hover:bg-white/10 transition-all">
+                    Hỗ Trợ Truy Nã
+                </button>
+                <button onclick="switchSection('bail')" id="nav-bail" class="nav-item flex-1 px-6 py-3 text-white font-semibold hover:bg-white/10 transition-all">
+                    Bảo Lãnh Tội Phạm
+                </button>
+                </div>
+            </div>
+
+        <!-- Section Content -->
+        <!-- Trang Chủ -->
+        <div id="section-home" class="section-content">
+            <h2 class="text-2xl font-bold text-white mb-3 drop-shadow-lg">Trang Chủ</h2>
+            
+            <!-- Welcome Message -->
+            <div class="mb-6 bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-6 text-center">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Welcome Rlife City Police Department</h1>
+        </div>
+
+            <!-- Hình ảnh đẹp -->
+            <div class="mb-6">
+                <h3 class="text-xl font-bold text-white mb-4 drop-shadow-md">Hình ảnh đẹp</h3>
+                <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+                            <img src="rcpd1.png" alt="RCPD Image 1" class="w-full h-auto object-cover">
+                </div>
+                        <div class="rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+                            <img src="rcpd2.png" alt="RCPD Image 2" class="w-full h-auto object-cover">
+                </div>
+                        <div class="rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+                            <img src="rcpd3.png" alt="RCPD Image 3" class="w-full h-auto object-cover">
+                </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Tham gia Discord -->
+            <div class="mb-6">
+                <h3 class="text-xl font-bold text-white mb-4 drop-shadow-md">Tham gia Discord tuyển dụng cảnh sát</h3>
+                <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-6 text-center">
+                    <a href="https://discord.gg/FPf3ruXvGc" target="_blank" rel="noopener noreferrer" 
+                       class="inline-block px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105">
+                        Tham gia Discord
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hỗ Trợ Xử Án -->
+        <div id="section-trial" class="section-content hidden">
+        <h2 class="text-2xl font-bold text-white mb-3 drop-shadow-lg">Hỗ Trợ Xử Án</h2>
+        <!-- Header với Summary Cards -->
+        <div class="mb-3 grid grid-cols-4 gap-2">
+            <div class="bg-gradient-to-br from-blue-700 to-blue-900 text-white p-3 rounded-lg shadow-md border border-blue-400">
+                <div class="text-xs opacity-80 mb-0.5">Tên</div>
+                <div id="displayName" class="text-lg font-bold">-</div>
+                </div>
+            <div class="bg-gradient-to-br from-blue-700 to-blue-900 text-white p-3 rounded-lg shadow-md border border-blue-400">
+                <div class="text-xs opacity-80 mb-0.5">CCCD</div>
+                <div id="displayCCCD" class="text-lg font-bold">-</div>
+                </div>
+            <div class="bg-gradient-to-br from-blue-700 to-blue-900 text-white p-3 rounded-lg shadow-md border border-blue-400">
+                <div class="text-xs opacity-80 mb-0.5">Tội Danh</div>
+                <div id="displayCrimes" class="text-sm font-semibold line-clamp-2">-</div>
+                </div>
+            <div class="bg-gradient-to-br from-blue-700 to-blue-900 text-white p-3 rounded-lg shadow-md border border-blue-400">
+                <div class="text-xs opacity-80 mb-0.5">Mức Án</div>
+                <div id="displayPenalty" class="text-xl font-bold">0 phút</div>
+                </div>
+            </div>
+
+        <!-- Summary Box -->
+        <div class="mb-3 bg-white rounded-lg border-2 border-blue-500 p-3 shadow-md">
+            <div class="space-y-1.5 text-sm">
+                <div><strong>Tên:</strong> <span id="summaryName">-</span></div>
+                <div><strong>CCCD:</strong> <span id="summaryCCCD">-</span></div>
+                <div><strong>Tội Danh:</strong> <span id="summaryCrimes">-</span></div>
+                <div><strong>Mức Án:</strong> <span id="summaryPenalty" class="font-normal">0 phút</span></div>
+                <div class="pt-1 border-t border-blue-400"><strong>Đã xử lý</strong></div>
+            </div>
+        </div>
+
+        <!-- Main Container: Sidebar + Content -->
+        <div class="grid grid-cols-12 gap-3">
+            <!-- Left Sidebar: Input Controls -->
+            <div class="col-span-3 space-y-2">
+                <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3">
+                    <h2 class="text-sm font-bold text-gray-800 mb-2 pb-2 border-b border-gray-200">Thông Tin</h2>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Tên</label>
+                            <input type="text" id="suspectName" placeholder="Nhập tên" 
+                                   class="w-full px-2 py-1 text-sm border border-blue-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">CCCD</label>
+                            <input type="text" id="suspectCCCD" placeholder="Nhập CCCD" 
+                                   class="w-full px-2 py-1 text-sm border border-blue-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3">
+                    <h2 class="text-sm font-bold text-gray-800 mb-2 pb-2 border-b border-gray-200">Giảm Trừ</h2>
+                    <div class="space-y-1.5">
+                        <label class="flex items-center space-x-2 cursor-pointer text-xs">
+                            <input type="checkbox" id="militaryPaper" class="w-4 h-4 cursor-pointer accent-blue-500">
+                            <span class="text-gray-700">NVQS (-60p)</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer text-xs">
+                            <input type="checkbox" id="cooperative" class="w-4 h-4 cursor-pointer accent-blue-500">
+                            <span class="text-gray-700">Hợp tác (-10p)</span>
+                        </label>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Giảm tự chọn</label>
+                            <input type="number" id="customReduction" value="0" min="0" 
+                                   class="w-full px-2 py-1 text-sm border border-blue-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                </div>
+                </div>
+
+                <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3">
+                    <h2 class="text-sm font-bold text-gray-800 mb-2 pb-2 border-b border-gray-200">Thao Tác</h2>
+                    <div class="space-y-1.5">
+                <button onclick="copyAll()" 
+                                class="w-full px-2 py-1.5 text-xs bg-gradient-to-r from-green-600 to-green-700 text-white font-bold rounded hover:from-green-700 hover:to-green-800 transition-all shadow-sm border border-green-500">
+                            Copy All
+                </button>
+                <button onclick="copyCrimesOnly()" 
+                                class="w-full px-2 py-1.5 text-xs bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold rounded hover:from-purple-700 hover:to-purple-800 transition-all shadow-sm border border-purple-500">
+                            Copy Crimes
+                </button>
+                <button onclick="resetCrimes()" 
+                                class="w-full px-2 py-1.5 text-xs bg-gradient-to-r from-red-600 to-red-700 text-white font-bold rounded hover:from-red-700 hover:to-red-800 transition-all shadow-sm border border-red-500">
+                            Reset
+                </button>
+            </div>
+        </div>
+
+                <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Tìm kiếm</label>
+                    <input type="text" id="searchBox" placeholder="Tìm..." onkeyup="filterCrimes()" 
+                           class="w-full px-2 py-1 text-sm border border-blue-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+            </div>
+
+            <!-- Right Content: All Crimes in Grid -->
+            <div class="col-span-9">
+                <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3">
+                    <!-- All Crimes Content in Grid -->
+                    <div class="grid grid-cols-2 gap-3">
+            <!-- Mức Độ 1 -->
+                        <div class="space-y-1.5">
+                            <div class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-2 rounded shadow-sm border border-blue-400">
+                                <h3 class="text-sm font-bold">Mức 1 (20p)</h3>
+                                <p class="text-xs opacity-80">Cho chuộc</p>
+                </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="1" data-penalty="20" data-name="Gây rối trật tự công cộng">
+                                <span class="crime-text flex-1 text-xs">Gây rối trật tự công cộng</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="1" data-penalty="20" data-name="Gây rối trụ sở cơ quan">
+                                <span class="crime-text flex-1 text-xs">Gây rối trụ sở cơ quan</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="1" data-penalty="20" data-name="Không giao nộp hung khí gây án">
+                                <span class="crime-text flex-1 text-xs">Không giao nộp hung khí gây án</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="1" data-penalty="20" data-name="Hỗ trợ đồng bọn / đồng phạm">
+                                <span class="crime-text flex-1 text-xs">Hỗ trợ đồng bọn / đồng phạm</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="1" data-penalty="20" data-name="Cướp tạp hóa">
+                                <span class="crime-text flex-1 text-xs">Cướp tạp hóa</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="1" data-penalty="20" data-name="Phá hoại tài sản nhà nước">
+                                <span class="crime-text flex-1 text-xs">Phá hoại tài sản nhà nước</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="1" data-penalty="20" data-name="Phá hoại tài sản cá nhân">
+                                <span class="crime-text flex-1 text-xs">Phá hoại tài sản cá nhân</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                </div>
+            </div>
+
+            <!-- Mức Độ 2 -->
+                        <div class="space-y-1.5">
+                            <div class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-2 rounded shadow-sm border border-blue-400">
+                                <h3 class="text-sm font-bold">Mức 2 (30p)</h3>
+                                <p class="text-xs opacity-80">Chống đối/xúc phạm không chuộc</p>
+                </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="2" data-penalty="30" data-name="Chế biến, tàng trữ, mua bán chất cấm">
+                                <span class="crime-text flex-1 text-xs">Chế biến, tàng trữ, mua bán chất cấm</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="2" data-penalty="30" data-name="Đánh bắt hải sản trái phép">
+                                <span class="crime-text flex-1 text-xs">Đánh bắt hải sản trái phép (Xử tại khu vực đánh bắt không cần áp giải về)</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="2" data-penalty="30" data-name="Vu khống người khác">
+                                <span class="crime-text flex-1 text-xs">Vu khống người khác</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="2" data-penalty="30" data-name="Xúc phạm, de doạ người khác">
+                                <span class="crime-text flex-1 text-xs">Xúc phạm, de doạ người khác</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="2" data-penalty="30" data-name="Xúc phạm, de doạ người trong ban ngành">
+                                <span class="crime-text flex-1 text-xs">Xúc phạm, de doạ người trong ban ngành</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="2" data-penalty="30" data-name="Sử dụng vũ khí nơi công cộng">
+                                <span class="crime-text flex-1 text-xs">Sử dụng vũ khí nơi công cộng</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="2" data-penalty="30" data-name="Lừa đảo chiếm đoạt tài sản">
+                                <span class="crime-text flex-1 text-xs">Lừa đảo chiếm đoạt tài sản</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="2" data-penalty="30" data-name="Chống đối người thi hành công vụ">
+                                <span class="crime-text flex-1 text-xs">Chống đối người thi hành công vụ</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="2" data-penalty="30" data-name="Xâm nhập trụ sở cơ quan">
+                                <span class="crime-text flex-1 text-xs">Xâm nhập trụ sở cơ quan</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="2" data-penalty="30" data-name="Mua bán vũ khí">
+                                <span class="crime-text flex-1 text-xs">Mua bán vũ khí</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                </div>
+            </div>
+
+            <!-- Mức Độ 3 -->
+                        <div class="space-y-1.5">
+                            <div class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-2 rounded shadow-sm border border-blue-400">
+                                <h3 class="text-sm font-bold">Mức 3 (60p)</h3>
+                                <p class="text-xs opacity-80">Không được chuộc</p>
+                </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="3" data-penalty="60" data-name="Tấn công/giết người nơi công cộng">
+                                <span class="crime-text flex-1 text-xs">Tấn công/giết người nơi công cộng</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="3" data-penalty="60" data-name="Sử dụng phương tiện lao vào người khác">
+                                <span class="crime-text flex-1 text-xs">Sử dụng phương tiện lao vào người khác. (Dù vô tình hay cố ý nếu không xin lỗi giảm xếp sẽ bị truy nã)</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="3" data-penalty="60" data-name="Tấn công lực lượng cảnh sát, EMS">
+                                <span class="crime-text flex-1 text-xs">Tấn công lực lượng cảnh sát, EMS (Nếu EMS chống trả thì không xử lý)</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="3" data-penalty="60" data-name="Đưa/nhận hối lộ">
+                                <span class="crime-text flex-1 text-xs">Đưa/nhận hối lộ</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="3" data-penalty="60" data-name="Cướp tiệm vàng">
+                                <span class="crime-text flex-1 text-xs">Cướp tiệm vàng (sắp có)</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="3" data-penalty="60" data-name="Cướp ngân hàng">
+                                <span class="crime-text flex-1 text-xs">Cướp ngân hàng (sắp có)</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                </div>
+            </div>
+
+            <!-- Mức Độ 4 -->
+                        <div class="space-y-1.5">
+                            <div class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-2 rounded shadow-sm border border-blue-400">
+                                <h3 class="text-sm font-bold">Mức 4 (100p)</h3>
+                                <p class="text-xs opacity-80">Không được chuộc</p>
+                </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="4" data-penalty="100" data-name="Tấn công trụ sở">
+                                <span class="crime-text flex-1 text-xs">Tấn công trụ sở: (Nhân số lần vi phạm không giới hạn nếu chưa xử lý)</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="4" data-penalty="100" data-name="Bạo động">
+                                <span class="crime-text flex-1 text-xs">Bạo động: (Nhân số lần vi phạm không giới hạn nếu chưa xử lý)</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="4" data-penalty="100" data-name="Tấn công nhân viên cấp cao">
+                                <span class="crime-text flex-1 text-xs">Tấn công nhân viên cấp cao</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                    </div>
+                            <div class="crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                         data-level="4" data-penalty="100" data-name="Gây rối khu vực trị an">
+                                <span class="crime-text flex-1 text-xs">Gây rối khu vực trị an (Xử lý bỏ tù thẳng không cần xét xử)</span>
+                                <input type="number" class="crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateSummary()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Special Note -->
+        <div class="mt-3 bg-gradient-to-br from-blue-700 to-blue-900 text-white p-3 rounded-lg shadow-md border border-blue-400">
+            <h2 class="text-sm font-bold mb-2 text-center">QUAN TRỌNG</h2>
+            <div class="space-y-1.5 text-xs leading-relaxed">
+                <p>
+                    <strong>Camp bắn lực lượng chức năng:</strong> Truy nã 7 ngày, mức án <strong>200 phút</strong>.
+                </p>
+                <p>
+                    Trốn tránh (ALT F4, rút mạng): <strong>500 phút</strong> Non-RP.
+                </p>
+                <p class="pt-2 border-t border-blue-400/50">
+                    <strong>Mức phạt tiền giữ nguyên.</strong>
+                </p>
+            </div>
+        </div>
+        </div>
+
+        <!-- Hỗ Trợ Truy Nã -->
+        <div id="section-wanted" class="section-content hidden">
+            <h2 class="text-2xl font-bold text-white mb-3 drop-shadow-lg">Hỗ Trợ Truy Nã</h2>
+            
+            <!-- Input Section -->
+            <div class="mb-3 bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3">
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Tên:</label>
+                        <input type="text" id="wantedName" placeholder="Nhập tên" 
+                               class="w-full px-2 py-1 text-sm border border-blue-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">CCCD:</label>
+                        <input type="text" id="wantedCCCD" placeholder="Nhập CCCD" 
+                               class="w-full px-2 py-1 text-sm border border-blue-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Box with Red Border -->
+            <div class="mb-3 bg-white rounded-lg border-2 border-blue-500 p-3 shadow-md">
+                <div class="space-y-1.5 text-sm">
+                    <div><strong>Tên:</strong> <span id="wantedSummaryName">-</span></div>
+                    <div><strong>CCCD:</strong> <span id="wantedSummaryCCCD">-</span></div>
+                    <div><strong>Tội Danh:</strong> <span id="wantedSummaryCrimes">-</span></div>
+                    <div><strong>Mức Án:</strong> <span id="wantedSummaryPenalty" class="font-normal">0 phút</span></div>
+                </div>
+            </div>
+
+            <!-- Crimes Grid -->
+            <div class="grid grid-cols-12 gap-3">
+                <!-- Left Sidebar: Controls -->
+                <div class="col-span-3 space-y-2">
+                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3">
+                        <h2 class="text-sm font-bold text-gray-800 mb-2 pb-2 border-b border-gray-200">Thao Tác</h2>
+                        <div class="space-y-1.5">
+                            <button onclick="copyWantedAll()" 
+                                    class="w-full px-2 py-1.5 text-xs bg-gradient-to-r from-green-600 to-green-700 text-white font-bold rounded hover:from-green-700 hover:to-green-800 transition-all shadow-sm border border-green-500">
+                                Copy All
+                            </button>
+                            <button onclick="copyWantedCrimesOnly()" 
+                                    class="w-full px-2 py-1.5 text-xs bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold rounded hover:from-purple-700 hover:to-purple-800 transition-all shadow-sm border border-purple-500">
+                                Copy Crimes
+                            </button>
+                            <button onclick="resetWantedCrimes()" 
+                                    class="w-full px-2 py-1.5 text-xs bg-gradient-to-r from-red-600 to-red-700 text-white font-bold rounded hover:from-red-700 hover:to-red-800 transition-all shadow-sm border border-red-500">
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Tìm kiếm</label>
+                        <input type="text" id="wantedSearchBox" placeholder="Tìm..." onkeyup="filterWantedCrimes()" 
+                               class="w-full px-2 py-1 text-sm border border-blue-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <!-- Right Content: All Crimes in Grid -->
+                <div class="col-span-9">
+                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <!-- Mức Độ 1 -->
+                            <div class="space-y-1.5">
+                                <div class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-2 rounded shadow-sm border border-blue-400">
+                                    <h3 class="text-sm font-bold">Mức 1 (20p)</h3>
+                                    <p class="text-xs opacity-80">Cho chuộc</p>
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="1" data-penalty="20" data-name="Gây rối trật tự công cộng">
+                                    <span class="wanted-crime-text flex-1 text-xs">Gây rối trật tự công cộng</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="1" data-penalty="20" data-name="Gây rối trụ sở cơ quan">
+                                    <span class="wanted-crime-text flex-1 text-xs">Gây rối trụ sở cơ quan</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="1" data-penalty="20" data-name="Không giao nộp hung khí gây án">
+                                    <span class="wanted-crime-text flex-1 text-xs">Không giao nộp hung khí gây án</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="1" data-penalty="20" data-name="Hỗ trợ đồng bọn / đồng phạm">
+                                    <span class="wanted-crime-text flex-1 text-xs">Hỗ trợ đồng bọn / đồng phạm</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="1" data-penalty="20" data-name="Cướp tạp hóa">
+                                    <span class="wanted-crime-text flex-1 text-xs">Cướp tạp hóa</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="1" data-penalty="20" data-name="Phá hoại tài sản nhà nước">
+                                    <span class="wanted-crime-text flex-1 text-xs">Phá hoại tài sản nhà nước</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="1" data-penalty="20" data-name="Phá hoại tài sản cá nhân">
+                                    <span class="wanted-crime-text flex-1 text-xs">Phá hoại tài sản cá nhân</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                            </div>
+
+                            <!-- Mức Độ 2 -->
+                            <div class="space-y-1.5">
+                                <div class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-2 rounded shadow-sm border border-blue-400">
+                                    <h3 class="text-sm font-bold">Mức 2 (30p)</h3>
+                                    <p class="text-xs opacity-80">Chống đối/xúc phạm không chuộc</p>
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Chế biến, tàng trữ, mua bán chất cấm">
+                                    <span class="wanted-crime-text flex-1 text-xs">Chế biến, tàng trữ, mua bán chất cấm</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Đánh bắt hải sản trái phép">
+                                    <span class="wanted-crime-text flex-1 text-xs">Đánh bắt hải sản trái phép (Xử tại khu vực đánh bắt không cần áp giải về)</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Vu khống người khác">
+                                    <span class="wanted-crime-text flex-1 text-xs">Vu khống người khác</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Xúc phạm, de doạ người khác">
+                                    <span class="wanted-crime-text flex-1 text-xs">Xúc phạm, de doạ người khác</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Xúc phạm, de doạ người trong ban ngành">
+                                    <span class="wanted-crime-text flex-1 text-xs">Xúc phạm, de doạ người trong ban ngành</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Sử dụng vũ khí nơi công cộng">
+                                    <span class="wanted-crime-text flex-1 text-xs">Sử dụng vũ khí nơi công cộng</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Lừa đảo chiếm đoạt tài sản">
+                                    <span class="wanted-crime-text flex-1 text-xs">Lừa đảo chiếm đoạt tài sản</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Chống đối người thi hành công vụ">
+                                    <span class="wanted-crime-text flex-1 text-xs">Chống đối người thi hành công vụ</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Xâm nhập trụ sở cơ quan">
+                                    <span class="wanted-crime-text flex-1 text-xs">Xâm nhập trụ sở cơ quan</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Mua bán vũ khí">
+                                    <span class="wanted-crime-text flex-1 text-xs">Mua bán vũ khí</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                            </div>
+
+                            <!-- Mức Độ 3 -->
+                            <div class="space-y-1.5">
+                                <div class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-2 rounded shadow-sm border border-blue-400">
+                                    <h3 class="text-sm font-bold">Mức 3 (60p)</h3>
+                                    <p class="text-xs opacity-80">Không được chuộc</p>
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="3" data-penalty="60" data-name="Tấn công/giết người nơi công cộng">
+                                    <span class="wanted-crime-text flex-1 text-xs">Tấn công/giết người nơi công cộng</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="3" data-penalty="60" data-name="Sử dụng phương tiện lao vào người khác">
+                                    <span class="wanted-crime-text flex-1 text-xs">Sử dụng phương tiện lao vào người khác. (Dù vô tình hay cố ý nếu không xin lỗi giảm xếp sẽ bị truy nã)</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="3" data-penalty="60" data-name="Tấn công lực lượng cảnh sát, EMS">
+                                    <span class="wanted-crime-text flex-1 text-xs">Tấn công lực lượng cảnh sát, EMS (Nếu EMS chống trả thì không xử lý)</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="3" data-penalty="60" data-name="Đưa/nhận hối lộ">
+                                    <span class="wanted-crime-text flex-1 text-xs">Đưa/nhận hối lộ</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="3" data-penalty="60" data-name="Cướp tiệm vàng">
+                                    <span class="wanted-crime-text flex-1 text-xs">Cướp tiệm vàng (sắp có)</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="3" data-penalty="60" data-name="Cướp ngân hàng">
+                                    <span class="wanted-crime-text flex-1 text-xs">Cướp ngân hàng (sắp có)</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                            </div>
+
+                            <!-- Mức Độ 4 -->
+                            <div class="space-y-1.5">
+                                <div class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-2 rounded shadow-sm border border-blue-400">
+                                    <h3 class="text-sm font-bold">Mức 4 (100p)</h3>
+                                    <p class="text-xs opacity-80">Không được chuộc</p>
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="4" data-penalty="100" data-name="Tấn công trụ sở">
+                                    <span class="wanted-crime-text flex-1 text-xs">Tấn công trụ sở: (Nhân số lần vi phạm không giới hạn nếu chưa xử lý)</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="4" data-penalty="100" data-name="Bạo động">
+                                    <span class="wanted-crime-text flex-1 text-xs">Bạo động: (Nhân số lần vi phạm không giới hạn nếu chưa xử lý)</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="4" data-penalty="100" data-name="Tấn công nhân viên cấp cao">
+                                    <span class="wanted-crime-text flex-1 text-xs">Tấn công nhân viên cấp cao</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                                <div class="wanted-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="4" data-penalty="100" data-name="Gây rối khu vực trị an">
+                                    <span class="wanted-crime-text flex-1 text-xs">Gây rối khu vực trị an (Xử lý bỏ tù thẳng không cần xét xử)</span>
+                                    <input type="number" class="wanted-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateWantedSummary()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bảo Lãnh Tội Phạm -->
+        <div id="section-bail" class="section-content hidden">
+            <h2 class="text-2xl font-bold text-white mb-3 drop-shadow-lg">Bảo Lãnh Tội Phạm</h2>
+            
+            <!-- Input Section -->
+            <div class="mb-3 bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Left Column -->
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Người giải quyết:</label>
+                            <input type="text" id="bailResolver" placeholder="Nhập tên người giải quyết" 
+                                   class="w-full px-2 py-1 text-sm border border-blue-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Người bảo lãnh:</label>
+                            <input type="text" id="bailBailer" placeholder="Nhập tên người bảo lãnh" 
+                                   class="w-full px-2 py-1 text-sm border border-blue-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Người vi phạm:</label>
+                            <input type="text" id="bailOffender" placeholder="Nhập tên người vi phạm" 
+                                   class="w-full px-2 py-1 text-sm border border-blue-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">CCCD:</label>
+                            <input type="text" id="bailCCCD" placeholder="Nhập CCCD" 
+                                   class="w-full px-2 py-1 text-sm border border-blue-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <!-- Right Column -->
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Tội danh:</label>
+                            <textarea id="bailCrimes" placeholder="Tự nhập tay hoặc chọn phía bên dưới" rows="3"
+                                      class="w-full px-2 py-1 text-sm border border-blue-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Mức án:</label>
+                            <input type="text" id="bailPenalty" placeholder="0 phút" readonly
+                                   class="w-full px-2 py-1 text-sm border border-blue-400 rounded bg-gray-100">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Số tiền:</label>
+                            <input type="text" id="bailAmount" placeholder="0$" readonly
+                                   class="w-full px-2 py-1 text-sm border border-blue-400 rounded bg-gray-100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Box -->
+            <div class="mb-3 bg-white rounded-lg border-2 border-blue-500 p-3 shadow-md">
+                <div class="space-y-1.5 text-sm">
+                    <div><strong>Người giải quyết:</strong> <span id="bailSummaryResolver">-</span></div>
+                    <div><strong>Người bảo lãnh:</strong> <span id="bailSummaryBailer">-</span></div>
+                    <div><strong>Người vi phạm:</strong> <span id="bailSummaryOffender">-</span></div>
+                    <div><strong>CCCD:</strong> <span id="bailSummaryCCCD">-</span></div>
+                    <div><strong>Tội danh:</strong> <span id="bailSummaryCrimes">-</span></div>
+                    <div><strong>Mức án:</strong> <span id="bailSummaryPenalty" class="font-normal">0 phút</span></div>
+                    <div><strong>Số tiền:</strong> <span id="bailSummaryAmount" class="font-normal">0$</span></div>
+                    <div class="pt-1 border-t border-blue-400"><strong>Đã xử lý</strong></div>
+                </div>
+            </div>
+
+            <!-- Crimes Section -->
+            <div class="grid grid-cols-12 gap-3">
+                <!-- Left Sidebar: Thao Tác -->
+                <div class="col-span-3">
+                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3">
+                        <h2 class="text-sm font-bold text-gray-800 mb-2 pb-2 border-b border-gray-200">Thao Tác</h2>
+                        <div class="space-y-1.5">
+                            <button onclick="copyBailAll()" 
+                                    class="w-full px-2 py-1.5 text-xs bg-gradient-to-r from-green-600 to-green-700 text-white font-bold rounded hover:from-green-700 hover:to-green-800 transition-all shadow-sm border border-green-500">
+                                Copy All
+                            </button>
+                            <button onclick="copyBailCrimesOnly()" 
+                                    class="w-full px-2 py-1.5 text-xs bg-gradient-to-r from-purple-600 to-purple-700 text-white font-bold rounded hover:from-purple-700 hover:to-purple-800 transition-all shadow-sm border border-purple-500">
+                                Copy Crimes
+                            </button>
+                            <button onclick="resetBailCrimes()" 
+                                    class="w-full px-2 py-1.5 text-xs bg-gradient-to-r from-red-600 to-red-700 text-white font-bold rounded hover:from-red-700 hover:to-red-800 transition-all shadow-sm border border-red-500">
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Content: Crimes Grid -->
+                <div class="col-span-9">
+                    <div class="bg-white/90 backdrop-blur-sm rounded-lg shadow-md p-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <!-- Mức Độ 1 -->
+                            <div class="space-y-1.5">
+                                <div class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-2 rounded shadow-sm border border-blue-400">
+                                    <h3 class="text-sm font-bold">Mức Độ 1</h3>
+                                    <p class="text-xs opacity-90 mt-1">Mức án: 20p, cho chuộc tội phạm</p>
+                                    <p class="text-xs opacity-90 mt-0.5 font-semibold">Bảo lãnh giá: 40.000$</p>
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="1" data-penalty="20" data-name="Gây rối trật tự công cộng">
+                                    <span class="bail-crime-text flex-1 text-xs">Gây rối trật tự công cộng</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="1" data-penalty="20" data-name="Gây rối trụ sở cơ quan">
+                                    <span class="bail-crime-text flex-1 text-xs">Gây rối trụ sở cơ quan</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="1" data-penalty="20" data-name="Không giao nộp hung khí gây án">
+                                    <span class="bail-crime-text flex-1 text-xs">Không giao nộp hung khí gây án</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="1" data-penalty="20" data-name="Hỗ trợ đồng bọn / đồng phạm">
+                                    <span class="bail-crime-text flex-1 text-xs">Hỗ trợ đồng bọn / đồng phạm</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="1" data-penalty="20" data-name="Cướp tạp hóa">
+                                    <span class="bail-crime-text flex-1 text-xs">Cướp tạp hóa</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="1" data-penalty="20" data-name="Phá hoại tài sản nhà nước">
+                                    <span class="bail-crime-text flex-1 text-xs">Phá hoại tài sản nhà nước</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="1" data-penalty="20" data-name="Phá hoại tài sản cá nhân">
+                                    <span class="bail-crime-text flex-1 text-xs">Phá hoại tài sản cá nhân</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                            </div>
+
+                            <!-- Mức Độ 2 -->
+                            <div class="space-y-1.5">
+                                <div class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-2 rounded shadow-sm border border-blue-400">
+                                    <h3 class="text-sm font-bold">Mức Độ 2</h3>
+                                    <p class="text-xs opacity-90 mt-1">Mức án: 30p, cho chuộc tội phạm</p>
+                                    <p class="text-xs opacity-90 mt-0.5 font-semibold">Bảo lãnh giá: 60.000$</p>
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Chế biến, tàng trữ, mua bán chất cấm">
+                                    <span class="bail-crime-text flex-1 text-xs">Chế biến, tàng trữ, mua bán chất cấm</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Đánh bắt hải sản trái phép">
+                                    <span class="bail-crime-text flex-1 text-xs">Đánh bắt hải sản trái phép (Xử tại khu vực đánh bắt không cần áp giải về)</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Vu khống người khác">
+                                    <span class="bail-crime-text flex-1 text-xs">Vu khống người khác</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Xúc phạm, de doạ người khác">
+                                    <span class="bail-crime-text flex-1 text-xs">Xúc phạm, de doạ người khác</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Xúc phạm, de doạ người trong ban ngành">
+                                    <span class="bail-crime-text flex-1 text-xs">Xúc phạm, de doạ người trong ban ngành</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Sử dụng vũ khí nơi công cộng">
+                                    <span class="bail-crime-text flex-1 text-xs">Sử dụng vũ khí nơi công cộng</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Lừa đảo chiếm đoạt tài sản">
+                                    <span class="bail-crime-text flex-1 text-xs">Lừa đảo chiếm đoạt tài sản</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Chống đối người thi hành công vụ">
+                                    <span class="bail-crime-text flex-1 text-xs">Chống đối người thi hành công vụ</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Xâm nhập trụ sở cơ quan">
+                                    <span class="bail-crime-text flex-1 text-xs">Xâm nhập trụ sở cơ quan</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                                <div class="bail-crime-item p-2 bg-gray-50 rounded cursor-pointer transition-all duration-200 border border-transparent flex items-center justify-between gap-2 hover:bg-gray-100 text-xs" 
+                                     data-level="2" data-penalty="30" data-name="Mua bán vũ khí">
+                                    <span class="bail-crime-text flex-1 text-xs">Mua bán vũ khí</span>
+                                    <input type="number" class="bail-crime-count-input w-10 px-1 py-0.5 border border-gray-300 rounded text-center text-xs" value="1" min="1" onchange="updateBailCrimes()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Section switching function
+        function switchSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Remove active class from all nav buttons
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.classList.remove('bg-white/20');
+            });
+            
+            // Show selected section
+            document.getElementById(`section-${sectionName}`).classList.remove('hidden');
+            
+            // Add active class to clicked button
+            document.getElementById(`nav-${sectionName}`).classList.add('bg-white/20');
+        }
+        // Update summary when inputs change
+        document.getElementById('suspectName').addEventListener('input', updateSummary);
+        document.getElementById('suspectCCCD').addEventListener('input', updateSummary);
+        document.getElementById('militaryPaper').addEventListener('change', updateSummary);
+        document.getElementById('cooperative').addEventListener('change', updateSummary);
+        document.getElementById('customReduction').addEventListener('input', updateSummary);
+
+        // Toggle crime selection
+        document.querySelectorAll('.crime-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (e.target.classList.contains('crime-count-input')) {
+                    return;
+                }
+                this.classList.toggle('selected');
+                if (this.classList.contains('selected')) {
+                    this.classList.add('bg-gradient-to-r', 'from-red-600', 'to-red-800', 'text-white', 'border-red-500', 'shadow-lg');
+                    this.classList.remove('bg-gray-50', 'hover:bg-gray-100');
+                    this.querySelector('.crime-text').classList.add('text-white', 'font-bold');
+                } else {
+                    this.classList.remove('bg-gradient-to-r', 'from-red-600', 'to-red-800', 'text-white', 'border-red-500', 'shadow-lg');
+                    this.classList.add('bg-gray-50', 'hover:bg-gray-100');
+                    this.querySelector('.crime-text').classList.remove('text-white', 'font-bold');
+                    this.querySelector('.crime-text').classList.add('text-gray-900');
+                }
+                updateSummary();
+            });
+        });
+
+        // Update summary
+        function updateSummary() {
+            // Update name and CCCD
+            const name = document.getElementById('suspectName').value || '-';
+            const cccd = document.getElementById('suspectCCCD').value || '-';
+            document.getElementById('displayName').textContent = name;
+            document.getElementById('displayCCCD').textContent = cccd;
+
+            // Calculate crimes and penalty
+            const selectedCrimes = [];
+            let totalPenalty = 0;
+
+            document.querySelectorAll('.crime-item.selected').forEach(item => {
+                const crimeName = item.dataset.name;
+                const penalty = parseInt(item.dataset.penalty);
+                const count = parseInt(item.querySelector('.crime-count-input').value) || 1;
+                const total = penalty * count;
+
+                selectedCrimes.push(crimeName + (count > 1 ? ` (x${count})` : ''));
+                totalPenalty += total;
+            });
+
+            // Apply reductions
+            if (document.getElementById('militaryPaper').checked) {
+                totalPenalty -= 60;
+            }
+            if (document.getElementById('cooperative').checked) {
+                totalPenalty -= 10;
+            }
+            const customReduction = parseInt(document.getElementById('customReduction').value) || 0;
+            totalPenalty -= customReduction;
+
+            // Ensure penalty is not negative
+            totalPenalty = Math.max(0, totalPenalty);
+
+            // Update display
+            document.getElementById('displayCrimes').textContent = selectedCrimes.length > 0 
+                ? selectedCrimes.join(', ') 
+                : '-';
+            document.getElementById('displayPenalty').textContent = totalPenalty + ' phút';
+            
+            // Update summary box
+            document.getElementById('summaryName').textContent = name;
+            document.getElementById('summaryCCCD').textContent = cccd;
+            document.getElementById('summaryCrimes').textContent = selectedCrimes.length > 0 
+                ? selectedCrimes.join(', ') 
+                : '-';
+            document.getElementById('summaryPenalty').textContent = totalPenalty + ' phút';
+        }
+
+        // Filter crimes
+        function filterCrimes() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            document.querySelectorAll('.crime-item').forEach(item => {
+                const crimeText = item.querySelector('.crime-text').textContent.toLowerCase();
+                if (crimeText.includes(searchTerm)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Copy all
+        function copyAll() {
+            const name = document.getElementById('suspectName').value;
+            const cccd = document.getElementById('suspectCCCD').value;
+            const crimes = document.getElementById('displayCrimes').textContent;
+            const penalty = document.getElementById('displayPenalty').textContent;
+
+            const text = `Tên: ${name}\nCCCD: ${cccd}\nTội Danh: ${crimes}\nMức Án: ${penalty}\nĐã xử lý`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Đã sao chép toàn bộ thông tin!');
+            });
+        }
+
+        // Copy crimes only
+        function copyCrimesOnly() {
+            const crimes = document.getElementById('displayCrimes').textContent;
+            navigator.clipboard.writeText(crimes).then(() => {
+                alert('Đã sao chép tội danh!');
+            });
+        }
+
+        // Reset crimes
+        function resetCrimes() {
+            if (confirm('Bạn có chắc muốn reset tất cả tội danh?')) {
+                document.querySelectorAll('.crime-item').forEach(item => {
+                    item.classList.remove('selected', 'bg-gradient-to-r', 'from-red-600', 'to-red-800', 'text-white', 'border-red-500', 'shadow-lg');
+                    item.classList.add('bg-gray-50', 'hover:bg-gray-100');
+                    const crimeText = item.querySelector('.crime-text');
+                    if (crimeText) {
+                        crimeText.classList.remove('text-white', 'font-bold');
+                        crimeText.classList.add('text-gray-900');
+                    }
+                    item.querySelector('.crime-count-input').value = 1;
+                });
+                updateSummary();
+            }
+        }
+
+        // Wanted Section Functions
+        // Update wanted summary when inputs change
+        const wantedNameEl = document.getElementById('wantedName');
+        const wantedCCCDEl = document.getElementById('wantedCCCD');
+        if (wantedNameEl) wantedNameEl.addEventListener('input', updateWantedSummary);
+        if (wantedCCCDEl) wantedCCCDEl.addEventListener('input', updateWantedSummary);
+
+        // Toggle wanted crime selection
+        document.querySelectorAll('.wanted-crime-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (e.target.classList.contains('wanted-crime-count-input')) {
+                    return;
+                }
+                this.classList.toggle('selected');
+                if (this.classList.contains('selected')) {
+                    this.classList.add('bg-gradient-to-r', 'from-red-600', 'to-red-800', 'text-white', 'border-red-500', 'shadow-lg');
+                    this.classList.remove('bg-gray-50', 'hover:bg-gray-100');
+                    this.querySelector('.wanted-crime-text').classList.add('text-white', 'font-bold');
+                } else {
+                    this.classList.remove('bg-gradient-to-r', 'from-red-600', 'to-red-800', 'text-white', 'border-red-500', 'shadow-lg');
+                    this.classList.add('bg-gray-50', 'hover:bg-gray-100');
+                    this.querySelector('.wanted-crime-text').classList.remove('text-white', 'font-bold');
+                    this.querySelector('.wanted-crime-text').classList.add('text-gray-900');
+                }
+                updateWantedSummary();
+            });
+        });
+
+        // Update wanted summary
+        function updateWantedSummary() {
+            const wantedNameEl = document.getElementById('wantedName');
+            const wantedCCCDEl = document.getElementById('wantedCCCD');
+            
+            if (!wantedNameEl || !wantedCCCDEl) return;
+            
+            const name = wantedNameEl.value || '-';
+            const cccd = wantedCCCDEl.value || '-';
+
+            const selectedCrimes = [];
+            let totalPenalty = 0;
+
+            document.querySelectorAll('.wanted-crime-item.selected').forEach(item => {
+                const crimeName = item.dataset.name;
+                const penalty = parseInt(item.dataset.penalty);
+                const count = parseInt(item.querySelector('.wanted-crime-count-input').value) || 1;
+                const total = penalty * count;
+
+                selectedCrimes.push(crimeName + (count > 1 ? ` (x${count})` : ''));
+                totalPenalty += total;
+            });
+
+            totalPenalty = Math.max(0, totalPenalty);
+
+            const summaryNameEl = document.getElementById('wantedSummaryName');
+            const summaryCCCDEl = document.getElementById('wantedSummaryCCCD');
+            const summaryCrimesEl = document.getElementById('wantedSummaryCrimes');
+            const summaryPenaltyEl = document.getElementById('wantedSummaryPenalty');
+            
+            if (summaryNameEl) summaryNameEl.textContent = name;
+            if (summaryCCCDEl) summaryCCCDEl.textContent = cccd;
+            if (summaryCrimesEl) summaryCrimesEl.textContent = selectedCrimes.length > 0 
+                ? selectedCrimes.join(', ') 
+                : '-';
+            if (summaryPenaltyEl) summaryPenaltyEl.textContent = totalPenalty + ' phút';
+        }
+
+        // Filter wanted crimes
+        function filterWantedCrimes() {
+            const wantedSearchBoxEl = document.getElementById('wantedSearchBox');
+            if (!wantedSearchBoxEl) return;
+            
+            const searchTerm = wantedSearchBoxEl.value.toLowerCase();
+            document.querySelectorAll('.wanted-crime-item').forEach(item => {
+                const crimeText = item.querySelector('.wanted-crime-text');
+                if (crimeText && crimeText.textContent.toLowerCase().includes(searchTerm)) {
+                    item.style.display = 'flex';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Copy wanted all
+        function copyWantedAll() {
+            const wantedNameEl = document.getElementById('wantedName');
+            const wantedCCCDEl = document.getElementById('wantedCCCD');
+            const wantedSummaryCrimesEl = document.getElementById('wantedSummaryCrimes');
+            const wantedSummaryPenaltyEl = document.getElementById('wantedSummaryPenalty');
+            
+            if (!wantedNameEl || !wantedCCCDEl || !wantedSummaryCrimesEl || !wantedSummaryPenaltyEl) return;
+            
+            const name = wantedNameEl.value;
+            const cccd = wantedCCCDEl.value;
+            const crimes = wantedSummaryCrimesEl.textContent;
+            const penalty = wantedSummaryPenaltyEl.textContent;
+
+            const text = `Tên: ${name}\nCCCD: ${cccd}\nTội Danh: ${crimes}\nMức Án: ${penalty}`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Đã sao chép toàn bộ thông tin!');
+            });
+        }
+
+        // Copy wanted crimes only
+        function copyWantedCrimesOnly() {
+            const wantedSummaryCrimesEl = document.getElementById('wantedSummaryCrimes');
+            if (!wantedSummaryCrimesEl) return;
+            
+            const crimes = wantedSummaryCrimesEl.textContent;
+            navigator.clipboard.writeText(crimes).then(() => {
+                alert('Đã sao chép tội danh!');
+            });
+        }
+
+        // Reset wanted crimes
+        function resetWantedCrimes() {
+            if (confirm('Bạn có chắc muốn reset tất cả tội danh?')) {
+                document.querySelectorAll('.wanted-crime-item').forEach(item => {
+                    item.classList.remove('selected', 'bg-gradient-to-r', 'from-red-600', 'to-red-800', 'text-white', 'border-red-500', 'shadow-lg');
+                    item.classList.add('bg-gray-50', 'hover:bg-gray-100');
+                    const crimeText = item.querySelector('.wanted-crime-text');
+                    if (crimeText) {
+                        crimeText.classList.remove('text-white', 'font-bold');
+                        crimeText.classList.add('text-gray-900');
+                    }
+                    item.querySelector('.wanted-crime-count-input').value = 1;
+                });
+                updateWantedSummary();
+            }
+        }
+
+        // Bail Section Functions
+        // Toggle bail crime selection
+        document.querySelectorAll('.bail-crime-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (e.target.classList.contains('bail-crime-count-input')) {
+                    return;
+                }
+                this.classList.toggle('selected');
+                if (this.classList.contains('selected')) {
+                    this.classList.add('bg-gradient-to-r', 'from-red-600', 'to-red-800', 'text-white', 'border-red-500', 'shadow-lg');
+                    this.classList.remove('bg-gray-50', 'hover:bg-gray-100');
+                    this.querySelector('.bail-crime-text').classList.add('text-white', 'font-bold');
+                } else {
+                    this.classList.remove('bg-gradient-to-r', 'from-red-600', 'to-red-800', 'text-white', 'border-red-500', 'shadow-lg');
+                    this.classList.add('bg-gray-50', 'hover:bg-gray-100');
+                    this.querySelector('.bail-crime-text').classList.remove('text-white', 'font-bold');
+                    this.querySelector('.bail-crime-text').classList.add('text-gray-900');
+                }
+                updateBailCrimes();
+            });
+        });
+
+        // Add event listeners for bail input fields
+        const bailResolverEl = document.getElementById('bailResolver');
+        const bailBailerEl = document.getElementById('bailBailer');
+        const bailOffenderEl = document.getElementById('bailOffender');
+        const bailCCCDEl = document.getElementById('bailCCCD');
+        const bailCrimesEl = document.getElementById('bailCrimes');
+
+        if (bailResolverEl) {
+            bailResolverEl.addEventListener('input', updateBailSummary);
+        }
+        if (bailBailerEl) {
+            bailBailerEl.addEventListener('input', updateBailSummary);
+        }
+        if (bailOffenderEl) {
+            bailOffenderEl.addEventListener('input', updateBailSummary);
+        }
+        if (bailCCCDEl) {
+            bailCCCDEl.addEventListener('input', updateBailSummary);
+        }
+        if (bailCrimesEl) {
+            bailCrimesEl.addEventListener('input', updateBailSummary);
+        }
+
+        // Update bail crimes textarea
+        function updateBailCrimes() {
+            const bailCrimesEl = document.getElementById('bailCrimes');
+            const bailPenaltyEl = document.getElementById('bailPenalty');
+            const bailAmountEl = document.getElementById('bailAmount');
+            if (!bailCrimesEl) return;
+
+            const selectedCrimes = [];
+            let totalPenalty = 0;
+            let totalAmount = 0;
+
+            document.querySelectorAll('.bail-crime-item.selected').forEach(item => {
+                const crimeName = item.dataset.name;
+                const penalty = parseInt(item.dataset.penalty) || 0;
+                const count = parseInt(item.querySelector('.bail-crime-count-input').value) || 1;
+                selectedCrimes.push(crimeName + (count > 1 ? ` (x${count})` : ''));
+                totalPenalty += penalty * count;
+                
+                // Tính số tiền: 40.000$ cho mức 1 (20p), 60.000$ cho mức 2 (30p)
+                if (penalty === 20) {
+                    totalAmount += 40000 * count;
+                } else if (penalty === 30) {
+                    totalAmount += 60000 * count;
+                }
+            });
+
+            bailCrimesEl.value = selectedCrimes.join(', ');
+            
+            if (bailPenaltyEl) {
+                bailPenaltyEl.value = totalPenalty > 0 ? `${totalPenalty} phút` : '0 phút';
+            }
+            
+            if (bailAmountEl) {
+                bailAmountEl.value = totalAmount > 0 ? `${totalAmount.toLocaleString('vi-VN')}$` : '0$';
+            }
+
+            // Update summary box
+            updateBailSummary();
+        }
+
+        // Update bail summary box
+        function updateBailSummary() {
+            const resolver = document.getElementById('bailResolver').value || '-';
+            const bailer = document.getElementById('bailBailer').value || '-';
+            const offender = document.getElementById('bailOffender').value || '-';
+            const cccd = document.getElementById('bailCCCD').value || '-';
+            const crimes = document.getElementById('bailCrimes').value || '-';
+            const penalty = document.getElementById('bailPenalty').value || '0 phút';
+            const amount = document.getElementById('bailAmount').value || '0$';
+
+            const summaryResolverEl = document.getElementById('bailSummaryResolver');
+            const summaryBailerEl = document.getElementById('bailSummaryBailer');
+            const summaryOffenderEl = document.getElementById('bailSummaryOffender');
+            const summaryCCCDEl = document.getElementById('bailSummaryCCCD');
+            const summaryCrimesEl = document.getElementById('bailSummaryCrimes');
+            const summaryPenaltyEl = document.getElementById('bailSummaryPenalty');
+            const summaryAmountEl = document.getElementById('bailSummaryAmount');
+
+            if (summaryResolverEl) summaryResolverEl.textContent = resolver;
+            if (summaryBailerEl) summaryBailerEl.textContent = bailer;
+            if (summaryOffenderEl) summaryOffenderEl.textContent = offender;
+            if (summaryCCCDEl) summaryCCCDEl.textContent = cccd;
+            if (summaryCrimesEl) summaryCrimesEl.textContent = crimes;
+            if (summaryPenaltyEl) summaryPenaltyEl.textContent = penalty;
+            if (summaryAmountEl) summaryAmountEl.textContent = amount;
+        }
+
+        // Copy bail all
+        function copyBailAll() {
+            const resolver = document.getElementById('bailResolver').value || '-';
+            const bailer = document.getElementById('bailBailer').value || '-';
+            const offender = document.getElementById('bailOffender').value || '-';
+            const cccd = document.getElementById('bailCCCD').value || '-';
+            const crimes = document.getElementById('bailCrimes').value || '-';
+            const penalty = document.getElementById('bailPenalty').value || '0 phút';
+            const amount = document.getElementById('bailAmount').value || '0$';
+
+            const text = `Người giải quyết: ${resolver}\nNgười bảo lãnh: ${bailer}\nNgười vi phạm: ${offender}\nCCCD: ${cccd}\nTội danh: ${crimes}\nMức án: ${penalty}\nSố tiền: ${amount}\nĐã xử lý`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Đã sao chép toàn bộ thông tin!');
+            });
+        }
+
+        // Copy bail crimes only
+        function copyBailCrimesOnly() {
+            const crimes = document.getElementById('bailCrimes').value || '-';
+            
+            navigator.clipboard.writeText(crimes).then(() => {
+                alert('Đã sao chép tội danh!');
+            });
+        }
+
+        // Reset bail crimes
+        function resetBailCrimes() {
+            if (confirm('Bạn có chắc muốn reset tất cả tội danh?')) {
+                document.querySelectorAll('.bail-crime-item').forEach(item => {
+                    item.classList.remove('selected', 'bg-gradient-to-r', 'from-red-600', 'to-red-800', 'text-white', 'border-red-500', 'shadow-lg');
+                    item.classList.add('bg-gray-50', 'hover:bg-gray-100');
+                    const crimeText = item.querySelector('.bail-crime-text');
+                    if (crimeText) {
+                        crimeText.classList.remove('text-white', 'font-bold');
+                        crimeText.classList.add('text-gray-900');
+                    }
+                    item.querySelector('.bail-crime-count-input').value = 1;
+                });
+                const bailCrimesEl = document.getElementById('bailCrimes');
+                const bailPenaltyEl = document.getElementById('bailPenalty');
+                const bailAmountEl = document.getElementById('bailAmount');
+                if (bailCrimesEl) bailCrimesEl.value = '';
+                if (bailPenaltyEl) bailPenaltyEl.value = '0 phút';
+                if (bailAmountEl) bailAmountEl.value = '0$';
+                updateBailSummary();
+            }
+        }
+
+        // Handle login button click
+        function handleLogin() {
+            const loadingScreen = document.getElementById('loading-screen');
+            const mainContent = document.getElementById('main-content');
+            
+            if (loadingScreen && mainContent) {
+                loadingScreen.style.opacity = '0';
+                loadingScreen.style.transition = 'opacity 0.8s ease-out';
+                
+                setTimeout(function() {
+                    loadingScreen.style.display = 'none';
+                    mainContent.classList.add('loaded');
+                }, 800);
+            }
+        }
+
+        // Loading Screen Handler - Auto login after 3 seconds
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                handleLogin();
+            }, 3000); // Auto login after 3 seconds
+        });
+    </script>
+    </div>
+</body>
+</html>
